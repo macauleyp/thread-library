@@ -932,9 +932,7 @@ static void sched_mlfq() {
 	
 }
 
-// Feel free to add any other functions you need
 
-// YOUR CODE HERE
 void *testThreads(void *args){
 	//printf("In user function.\n");
 	int i;
