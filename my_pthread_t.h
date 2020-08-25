@@ -1,11 +1,3 @@
-// File:	my_pthread_t.h
-// Author:	Yujie REN
-// Date:	January 2019
-
-// List all group member's name: Macauley Pinto, Ryan Townsend, Itamar Levi
-// username of iLab: msp194, il166, rrt51
-// iLab Server: cd.css.rutgers.edu
-
 #ifndef MY_PTHREAD_T_H
 #define MY_PTHREAD_T_H
 
