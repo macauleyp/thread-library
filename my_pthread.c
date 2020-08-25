@@ -1,9 +1,5 @@
 #include "my_pthread_t.h"
 
-// INITAILIZE ALL YOUR VARIABLES HERE
-// YOUR CODE HERE
-
-
 
 my_pthread_t currThread = 0;
 
@@ -19,7 +15,6 @@ my_pthread_t currThread = 0;
 #endif
 
 
-
 int initialized = -2;
 int firstThread = -1;
 int mutexCounter = 0;
@@ -27,7 +22,6 @@ int mutexCounter = 0;
 unsigned long int x = 0;
 
 int exitedYield = -1;
-
 
 
 my_pthread_t createdThread = 0;
@@ -117,9 +111,6 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr,
 	// After everything is all set, push this thread into run queue
 
 	//fprintf(stdout,"Creating Thread.\n");
-
-	// YOUR CODE HERE
-
 	
 	if(initialized == -2){
 		
@@ -334,8 +325,6 @@ int my_pthread_yield() {
 	// Change thread state from Running to Ready
 	// Save context of this thread to its thread control block
 	// Switch from thread context to scheduler context
-	
-	// YOUR CODE HERE
 		
 	//fprintf(stdout,"{YIELD}\n");
 
@@ -461,8 +450,6 @@ int my_pthread_yield() {
 void my_pthread_exit(void *value_ptr) {
 	// Deallocated any dynamic memory created when starting this thread
 
-	// YOUR CODE HERE
-
 	node *threadToDestroy = (node *)value_ptr;
 	threadToJoin = threadToDestroy->threadBlock->id;
 	
@@ -577,7 +564,6 @@ int my_pthread_join(my_pthread_t thread, void **value_ptr) {
 	// Once this thread finishes,
 	// Deallocated any dynamic memory created when starting this thread
   
-	// YOUR CODE HERE
 	int counter = 0;
 	
 	//fprintf(stdout,"Waiting for thread %d\n",thread);
@@ -627,41 +613,6 @@ int my_pthread_join(my_pthread_t thread, void **value_ptr) {
 	
 	return 0;
 };
-
-/*
-
-		while(dummy){
-		
-			if(dummy->threadBlock == NULL){
-			
-				return 0;
-			}
-		//printf("dummy->threadBlock: %d\n", dummy->threadBlock->id);
-
-			if(dummy->threadBlock->id == thread && dummy->threadBlock->join == 0){
-					
-					if(dummy->threadBlock->join == 1){
-						//fprintf(stdout,"Break\n");
-						dummy->threadBlock->status = COMPLETE;
-						break;
-		
-					}else{
-						//sleep(100);
-						
-						my_pthread_yield();
-						continue;
-					}
-					
-					
-			}else{
-
-				dummy = dummy->next;
-
-
-			}
-
-		}
-*/
 
 void appendMutex(mutexNode * head,mutexNode * mutex){
 	mutexNode * ptr = head;
@@ -713,9 +664,6 @@ int my_pthread_mutex_init(my_pthread_mutex_t *mutex, const pthread_mutexattr_t *
 	// Initialize data structures for this mutex
 	//printf("INITIALIZING MUTEX INIT\n");
 	
-	// YOUR CODE HERE
-	
-	
 	mutexNode *newMutex = (mutexNode *)malloc(sizeof(mutexNode));
 	newMutex->mutex=mutex;
 	newMutex->mutex->id = mutexCounter;
@@ -739,7 +687,7 @@ int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) {
 	// If acquiring mutex fails, push current thread into block list 
 	// and context switch to scheduler 
 
-	// YOUR CODE HERE
+
 	//check if mutex is already locked
 		//if already locked
 			//calling thread is blocked
@@ -782,7 +730,6 @@ int my_pthread_mutex_unlock(my_pthread_mutex_t *mutex) {
 	// Put threads in block list to run queue 
 	// so that they could compete for mutex later.
 
-	// YOUR CODE HERE
 	//printf("INSIDE UNLOCK\n");
 
 #ifndef MLFQ
@@ -792,12 +739,8 @@ int my_pthread_mutex_unlock(my_pthread_mutex_t *mutex) {
 			//printf("MUTEX RELEASED BY THREAD %d\n",mutex->holder->id);
 		//__sync_lock_release(&mutex);
 
-		//below is version 1
 		__sync_lock_test_and_set(&mutex->flag,0);
 
-		//block below is version 2
-		//__sync_synchronize();
-		//mutex->flag=0;
 	
 		ptr = mutex->front;
 		
@@ -824,7 +767,7 @@ int my_pthread_mutex_unlock(my_pthread_mutex_t *mutex) {
 	while(ptr2!=NULL){
 		
 		//create a function to pull node from list
-		//ptr2->next=NULL;
+
 		enQueueState(ptr2,RUNNING,sched,ptr2->queueLevel);
 		
 		ptr2 = removeBlockedList(mutex);
@@ -857,28 +800,17 @@ int my_pthread_mutex_destroy(my_pthread_mutex_t *mutex) {
 	//edge cases
 	free(ptr);
 	ptr = NULL;
-	//free(mutex->holder);
-	//printf("438\n");
-	//mutex->holder = NULL;
-	//printf("440\n");
-	//free(mutex);
-	//printf("442\n");
-	//mutex = NULL;
-	//printf("LEAVING DESTROY\n");
+
 	return 0;
 };
 
 
 /* scheduler */
 static void schedule() {
-	// Every time when timer interrup happens, your thread library 
-	// should be contexted switched from thread context to this 
-	// schedule function
-		
+
+
 	// Invoke different actual scheduling algorithms
 	// according to policy (STCF or MLFQ)
-
-	// YOUR CODE HERE
 
 // schedule policy
 
@@ -897,10 +829,9 @@ static void schedule() {
 
 /* Preemptive SJF (STCF) scheduling algorithm */
 static void sched_stcf() {
-	// Your own implementation of STCF
-	// (feel free to modify arguments and return types)
 
-	// YOUR CODE HERE
+
+
 	//fprintf(stdout,"{STCF} In scheduler.\n");
 
 	
@@ -963,13 +894,7 @@ static void sched_stcf() {
 
 /* Preemptive MLFQ scheduling algorithm */
 static void sched_mlfq() {
-	// Your own implementation of MLFQ
-	// (feel free to modify arguments and return types)
 
-	// YOUR CODE HERE
-	//sched = 11;
-
-	
 	while(completed < allThreadsCreated){
 		//printMLFQ(A);
 		node* threadToSchedule = dequeueMLFQ(A);
@@ -1024,7 +949,7 @@ void *testThreads(void *args){
 	//printf("X is %d\n",x);
 
 	
-	return "Successssssssssss";
+	return "Success";
 	
 }
 /*int main(void){
