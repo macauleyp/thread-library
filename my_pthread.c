@@ -903,9 +903,9 @@ static void sched_mlfq() {
 		runningMLFQ->rear = threadToSchedule;
 			
 		//fprintf(stdout,"{SCHEDULER - MLFQ} Scheduling thread %d\n",threadToSchedule->threadBlock->id);
-		if(threadToSchedule->threadBlock == NULL) break;//segfaults when removed
+		if(threadToSchedule->threadBlock == NULL) break;
 		if(threadToSchedule->threadBlock->status == COMPLETE){
-				//yield?
+			
 				continue;
 		}
 
@@ -1073,7 +1073,7 @@ node *removeFromMLFQ(my_pthread_t threadID,struct runningThreadQueue **A){
 
 			}else{
 				node *remove = curr;
-				//SEGFAULT HERE
+
 				//printf("curr id: %d\n", curr->threadBlock->id);
 				if(prev->threadBlock == NULL) return remove;
 				//printf("prev id: %d\n", prev->threadBlock->id);
@@ -1424,7 +1424,7 @@ node *removeCompletedThread(my_pthread_t threadID, int state){
 
 		}else{
 			node *remove = curr;
-			//SEGFAULT HERE
+		
 			//printf("curr id: %d\n", curr->threadBlock->id);
 			if(prev->threadBlock == NULL) return remove;
 			//printf("prev id: %d\n", prev->threadBlock->id);
