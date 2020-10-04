@@ -12,7 +12,7 @@
 #define USE_MY_PTHREAD 1
 #define STCF 10
 
-/* include lib header files that you need here: */
+
 #include <unistd.h>
 #include <sys/syscall.h>
 #include <sys/types.h>
@@ -31,15 +31,7 @@ void outputPriority();
 typedef uint my_pthread_t;
 
 typedef struct threadControlBlock {
-	/* add important states in a thread control block */
-	// thread Id
-	// thread status
-	// thread context
-	// thread stack
-	// thread priority
-	// And more ...
 
-	// YOUR CODE HERE
 	my_pthread_t id;
 	int status;
 
@@ -52,10 +44,6 @@ typedef struct threadControlBlock {
 	void *(*func)(void *);
 	void *args;
 	void *returnValue;
-	
-	
-	
-	
 	
 } tcb; 
 struct itimerval timer;
@@ -70,13 +58,6 @@ typedef struct my_pthread_mutex_t {
 	struct tcbNode* front;
 	
 } my_pthread_mutex_t;
-
-
-/* define your data structures here: */
-// Feel free to add your own auxiliary data structures (linked list or queue etc...)
-
-// YOUR CODE HERE
-
 
 typedef struct mutexNode{
 	my_pthread_mutex_t *mutex;
@@ -105,11 +86,8 @@ struct runningThreadQueue{
 	node* rear;
 	int readySize;
 	int runningSize;
-
-
+	
 };
-
-
 
 struct tcbNode *completedThreads;
 struct blockedThreadQueue *blockedQueue;
