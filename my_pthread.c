@@ -1104,7 +1104,6 @@ node* dequeueMLFQ(struct runningThreadQueue **A){
 		//traverse list
 		//find lowest priority
 		//pull node from list
-			//fix pointers
 		//return node
 		//dont change queuelevel here
 		
