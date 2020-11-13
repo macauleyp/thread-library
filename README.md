@@ -1,6 +1,6 @@
 # User-Level Thread Library in C
 
-This is a pure user-level thread library that has a interface similar to the standard POSIX Thread library. The code was compiled and executed successfully on CentOS 7.
+This is a pure User-Level Thread library that has an interface similar to the standard POSIX Thread library. The code was compiled and executed successfully on CentOS 7.
 
 # Running the Library
 
