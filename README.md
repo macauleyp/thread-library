@@ -4,7 +4,7 @@ This is a pure user-level thread library that has a interface similar to the sta
 
 # Running the Library
 
-The User-Level Thread library allows for scheduling threads between two different policies---Preemptive Shortest Job First and Multi-Level Feedback Queue. To change scheduling policies for the User-Level Thread library execute the following commands in the libraries directory:
+The User-Level Thread library allows for scheduling threads between two different policies—Preemptive Shortest Job First and Multi-Level Feedback Queue. To change scheduling policies for the User-Level Thread library execute the following commands in the libraries directory:
 
  - Preemptive Shortest Job First: this is already set by default. Simply execute ```make``` from the command-line.
  - Multi-Level Feedback Queue: Execute ```make SCHED=MLFQ``` from the command-line.
@@ -25,7 +25,7 @@ Creates a thread that executes the provided function.
 ```C
 int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*function)(void*), void * arg);
 ```
-Ends the thread that called it---if the ```value_ptr``` is not ```NULL```, any return value from the thread will be saved.
+Ends the thread that called it—if the ```value_ptr``` is not ```NULL```, any return value from the thread will be saved.
 ```C
 void my_pthread_exit(void *value_ptr);
 ```
