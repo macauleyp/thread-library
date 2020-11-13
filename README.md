@@ -34,7 +34,7 @@ Ensures the calling thread will not continue execution until the one it referenc
 int my_pthread_join(my_pthread_t thread, void **value_ptr);
 ```
 ## Mutex Specific Functions
-Initializes a my_pthread_mutex_t created by the calling thread. 
+Initializes a my_pthread_mutex_t (a mutex lock) created by the calling thread. 
 
  - **Note:** 'mutexattr' is ignored
 
