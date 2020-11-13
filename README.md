@@ -51,7 +51,7 @@ int my_pthread_mutex_unlock(my_pthread_mutex_t *mutex);
 ```
 Destroys a given mutex.
 
- - **Note:** The mutex should be unlocked before doing so. 
+ - **Note:** The mutex should be unlocked before performing this operation. 
 
 ```C
 int my_pthread_mutex_destroy(my_pthread_mutex_t *mutex);
