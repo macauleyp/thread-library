@@ -23,13 +23,11 @@ unsigned long int x = 0;
 
 int exitedYield = -1;
 
-
 my_pthread_t createdThread = 0;
 my_pthread_t completedThreadID = 0;
 my_pthread_t threadToJoin = 0;
 
 int completed = 0;
-
 
 int join = 0;
 
@@ -47,14 +45,9 @@ ucontext_t exitThreadContext;
 ucontext_t joinThreadContext;
 ucontext_t interruptHandlerContext;
 
-
-
-
 struct tcbNode * prevThread;
 
 my_pthread_t allThreadsCreated = -1;
-
-
 
 volatile int v;
 struct mutexList;
@@ -72,7 +65,9 @@ my_pthread_mutex_t t;
 my_pthread_t genThreadID(){
 
 	return ++allThreadsCreated;
+	
 }
+
 void initPrevThreadContext(){
 
 	prevThread = (struct tcbNode *)malloc(sizeof(struct tcbNode));
@@ -101,43 +96,43 @@ void initPrevThreadContext(){
 	
 }
 
+/* 
+	- Create a New thread 
+		- Create Thread Control Block
+			- Create and initialize the context of this thread
+			- Allocate space of stack for this thread to run
+			- After everything is all set, push this thread into run queue
 
-/* create a new thread */
+*/
 int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, 
                       void *(*function)(void*), void * arg) {
-	// Create Thread Control Block
-	// Create and initialize the context of this thread
-	// Allocate space of stack for this thread to run
-	// After everything is all set, push this thread into run queue
+	
 
-	//fprintf(stdout,"Creating Thread.\n");
+	// fprintf(stdout,"Creating Thread.\n");
 	
 	if(initialized == -2){
 		
-		initPrevThreadContext(); //initializes main thread
-		 
-		initQueues();  //initialized queues
-
+		initPrevThreadContext(); // initializes main thread
+		initQueues();  // initialized queues
 		initialized = -1;
 
 	}
 	
 	struct tcbNode *newThread = (struct tcbNode *)malloc(sizeof(struct tcbNode));
 	
-
 	if(!newThread){
 		fprintf(stderr,"Error allocating stack memory\n");
 		exit(1);
 	}
 
-	//allocate space for TCB and initialize context for new Thread
+	// Allocate space for TCB and initialize context for new Thread
 	newThread->threadBlock = (struct threadControlBlock *)malloc(sizeof(struct threadControlBlock));
 	
 	genThreadID();		//assign ThreadID
 	newThread->threadBlock->id = allThreadsCreated;
 	*thread = newThread->threadBlock->id;
 
-//	fprintf(stdout,"Thread ID: %d | newThread: %d\n",*thread,newThread->threadBlock->id);	
+	// fprintf(stdout,"Thread ID: %d | newThread: %d\n",*thread,newThread->threadBlock->id);	
 
 	
 	newThread->threadBlock->context = (ucontext_t *)malloc(sizeof(ucontext_t));
@@ -154,24 +149,21 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr,
 	newThread->threadBlock->func = function;
 	newThread->threadBlock->args = arg;
 	
-	
 	newThread->threadBlock->status = READY;
-
-
-
 
 	(*newThread->threadBlock->context).uc_link = prevThread->threadBlock->context;
 	makecontext(newThread->threadBlock->context, (void*)(*threadWrapper), 0);
 	
 	prevThread = newThread;
 
-	//fprintf(stdout,"P_THREAD_CREATE: Queueing Thread\n");
+	// fprintf(stdout,"P_THREAD_CREATE: Queueing Thread\n");
 
 	enQueueState(newThread,RUNNING, sched, 0);
 	
 	if(initialized == -1){
 	
 		initializeTimerInterrupt();
+		
 	}
 	
 	return 0;
@@ -182,6 +174,7 @@ void threadWrapper(){
 
 	node *threadToExecute;
 	if(sched == 10){
+		
 		threadToExecute = deQueueState(RUNNING);
 		threadToExecute->threadBlock->returnValue = threadToExecute->threadBlock->func(threadToExecute->threadBlock->args);
 		threadToExecute->threadBlock->status = COMPLETE;
@@ -195,9 +188,9 @@ void threadWrapper(){
 		returnValue = threadToExecute->threadBlock->returnValue;
 		threadToExecute->threadBlock->status = COMPLETE;
 
-		//fprintf(stdout,"Exiting thread %d....\n",threadToExecute->threadBlock->id);
-
+		// fprintf(stdout,"Exiting thread %d....\n",threadToExecute->threadBlock->id);
 		my_pthread_exit(threadToExecute); 
+		
 	}
 	
 
@@ -206,91 +199,89 @@ void updateRunningThreadsPriority(){
 		
 	node *dummy = runningQueue->front;
 	while(dummy){
+		
 		if(dummy->threadBlock->status == RUNNING){
 
-			//fprintf(stdout,"Thread %d Priority: %d.\n",dummy->threadBlock->id,dummy->threadBlock->priority);
-
+			// fprintf(stdout,"Thread %d Priority: %d.\n",dummy->threadBlock->id,dummy->threadBlock->priority);
 			++dummy->threadBlock->priority;
 		}
+		
 		dummy = dummy->next;
+		
 	}
 
 }
 void initializeTimerInterrupt(){
 
-	//fprintf(stdout,"Initializing Handler\n");
-	
+	// fprintf(stdout,"Initializing Handler\n");
 	if(signal(SIGALRM,timerInterruptHandler) == SIG_ERR){
-		//fprintf(stderr,"Unable to catch alarm.\n");
-
+		
+		// fprintf(stderr,"Unable to catch alarm.\n");
 		exit(1);
 
 	}
+	
 	timer.it_value.tv_sec = INTERVAL/1000;
 	timer.it_value.tv_usec = (INTERVAL*1000) % 1000000;	
 	timer.it_interval = timer.it_value;
 
 	if(setitimer(ITIMER_REAL,&timer,NULL) == -1){
-		//fprintf(stderr,"Error setting timer.\n");
-
+		
+		// fprintf(stderr,"Error setting timer.\n");
 		exit(1);
 
 	}
 
 	initialized = 1;
 	while(1){	
+		
 		if(join == 1){
-
+			
 			pause();
-
-			//printf("After pause\n");
-
+			// printf("After pause\n");
 			if(exitedYield == 1){
-
-	
+				
 				return;
+				
 			}
 
 		}else{
-
-			break;
-
-		}
 			
+			break;
+			
+		}
+		
 	}
-   initialized = -1;
+	
+   	initialized = -1;
 }
 void timerInterruptHandler(){
 
-	//fprintf(stdout,"Interrupt Occured.\n");
-	
+	// fprintf(stdout,"Interrupt Occured.\n");
 	if(sched == 10){
+		
 		updateRunningThreadsPriority(); 
-		//runningThread->threadBlock->priority = runningThread->threadBlock->priority + 1;
+		
 		if(waitingToJoin != 0){
-			//fprintf(stdout,"Cleaning up thread\n");
 			
+			// fprintf(stdout,"Cleaning up thread\n");
 			waitingToJoin = 0;
 			node *threadToDestroy = findByThreadID(threadToJoin,sched);
 			node *remove = removeCompletedThread(threadToDestroy->threadBlock->id,COMPLETE);
 			setcontext(&exitThreadContext);
+			
 		}
 		
 	}else{
 
-		
-
 		clock_gettime(CLOCK_REALTIME, &end);
-			
 		if(waitingToJoin != 0){
-			//fprintf(stdout,"Cleaning up thread\n");
 			
+			// fprintf(stdout,"Cleaning up thread\n");
 			waitingToJoin = 0;
-			
-			
 			setcontext(&exitThreadContext);
+			
 		}
-
 
 		if(completed < allThreadsCreated){
 
@@ -298,36 +289,37 @@ void timerInterruptHandler(){
 			
 				shiftThreadsInQueue(A);
 				timerCount=0;
-				//printMLFQ(A);
+				// printMLFQ(A);
+				
 			}
 		}
 	
-	
-	
 	}
-
 
 	if(completed < allThreadsCreated){
-			int thread = my_pthread_yield();
+		
+		int thread = my_pthread_yield();
 	
 	}
-
-	
 	
 	if(exitedYield == 1){
 
 		return;
-	}	
+	}
+	
 }
 
-/* give CPU pocession to other user level threads voluntarily */
-int my_pthread_yield() {
-	// Change thread state from Running to Ready
-	// Save context of this thread to its thread control block
-	// Switch from thread context to scheduler context
-		
-	//fprintf(stdout,"{YIELD}\n");
+/* 
 
+	- Give CPU pocession to other user level threads voluntarily 
+		- Change thread state from Running to Ready
+		- Save context of this thread to its thread control block
+		- Switch from thread context to scheduler context
+		
+*/
+int my_pthread_yield() {
+
+	//fprintf(stdout,"{YIELD}\n");
 	if(sched == 10){
 
 		node *setRunningThreadToReady = runningQueue->front;
@@ -335,7 +327,6 @@ int my_pthread_yield() {
 		if(!setRunningThreadToReady){
 			
 			//fprintf(stdout,"No items in queue\n");
-
 			exitedYield = 1;
 			return completed;
 
@@ -350,36 +341,33 @@ int my_pthread_yield() {
 				break;
 				
 			}
-			setRunningThreadToReady = setRunningThreadToReady->next;					
+			
+			setRunningThreadToReady = setRunningThreadToReady->next;	
+			
 		}
 
 		if(!setRunningThreadToReady){
+			
 			setRunningThreadToReady = runningQueue->front;
 			
 		}
 		
-		//outputCompletedThreads();
+		// outputCompletedThreads();
 		if(firstThread == -1){
 			firstThread = 1;
 			schedule();
 		}else{
 		
-			//fprintf(stdout,"Thread: %d status is %d\n",setRunningThreadToReady->threadBlock->id,setRunningThreadToReady->threadBlock->status);
-
-
+			// fprintf(stdout,"Thread: %d status is %d\n",setRunningThreadToReady->threadBlock->id,setRunningThreadToReady->threadBlock->status);
 			if(setRunningThreadToReady->threadBlock->status == COMPLETE){
-				//fprintf(stdout,"{YIELD} Completed Thread %d\n",setRunningThreadToReady->threadBlock->id);
-
-				node *remove = removeCompletedThread(setRunningThreadToReady->threadBlock->id,COMPLETE);
-
-				my_pthread_yield();
-
 				
-						
-
+				// fprintf(stdout,"{YIELD} Completed Thread %d\n",setRunningThreadToReady->threadBlock->id);
+				node *remove = removeCompletedThread(setRunningThreadToReady->threadBlock->id,COMPLETE);
+				my_pthread_yield();		
 				
 			}else if(setRunningThreadToReady != NULL && setRunningThreadToReady->threadBlock != NULL && setRunningThreadToReady->threadBlock->id != 0){
-				//fprintf(stdout,"Threads completed %d\n",completed);
+				
+				// fprintf(stdout,"Threads completed %d\n",completed);
 				swapcontext(setRunningThreadToReady->threadBlock->context,&scheduleThreads);
 
 			}
@@ -391,39 +379,37 @@ int my_pthread_yield() {
 	}else{
 
 		if(firstThread == -1){
-			//printf("Here\n");
-			//printMLFQ(A);
+
 			firstThread = 1;
 			schedule();
 
 		}else{
-		//	printMLFQ(A);
-		//	printf("Here 2\n");
+
 			node *setMeToReady = runningMLFQ->front;
 			setMeToReady->threadBlock->status = READY;
 
 			if(setMeToReady->queueLevel == 0 && setMeToReady->threadBlock->elapsed > 50){
 
-				//printf("THREAD %d HAS RUN FOR %d: GREATER THAN ALLOWED: 50 SHIFTING FROM LEVEL %d TO LEVEL %d.\n",setMeToReady->threadBlock->id,setMeToReady->threadBlock->elapsed,setMeToReady->queueLevel,setMeToReady->queueLevel+1);
+				// printf("THREAD %d HAS RUN FOR %d: GREATER THAN ALLOWED: 50 SHIFTING FROM LEVEL %d TO LEVEL %d.\n",setMeToReady->threadBlock->id,setMeToReady->threadBlock->elapsed,setMeToReady->queueLevel,setMeToReady->queueLevel+1);
 				setMeToReady->threadBlock->elapsed = 0;
 				enQueueState(setMeToReady, READY, sched, setMeToReady->queueLevel+1);
 
 			}else if(setMeToReady->queueLevel == 1 && setMeToReady->threadBlock->elapsed > 100){
 
-				//printf("THREAD %d HAS RUN FOR %d: GREATER THAN ALLOWED: 100 SHIFTING FROM LEVEL %d TO LEVEL %d.\n",setMeToReady->threadBlock->id,setMeToReady->threadBlock->elapsed,setMeToReady->queueLevel,setMeToReady->queueLevel+1);
+				// printf("THREAD %d HAS RUN FOR %d: GREATER THAN ALLOWED: 100 SHIFTING FROM LEVEL %d TO LEVEL %d.\n",setMeToReady->threadBlock->id,setMeToReady->threadBlock->elapsed,setMeToReady->queueLevel,setMeToReady->queueLevel+1);
 				setMeToReady->threadBlock->elapsed = 0;
 				enQueueState(setMeToReady, READY, sched, setMeToReady->queueLevel+1);
 
 			}else if(setMeToReady->queueLevel == 2 && setMeToReady->threadBlock->elapsed > 150){
 
-				//printf("THREAD %d HAS RUN FOR %d: GREATER THAN ALLOWED: 150 SHIFTING FROM LEVEL %d TO LEVEL %d.\n",setMeToReady->threadBlock->id,setMeToReady->threadBlock->elapsed,setMeToReady->queueLevel,setMeToReady->queueLevel+1);
+				// printf("THREAD %d HAS RUN FOR %d: GREATER THAN ALLOWED: 150 SHIFTING FROM LEVEL %d TO LEVEL %d.\n",setMeToReady->threadBlock->id,setMeToReady->threadBlock->elapsed,setMeToReady->queueLevel,setMeToReady->queueLevel+1);
 				setMeToReady->threadBlock->elapsed = 0;
 				enQueueState(setMeToReady, READY, sched, setMeToReady->queueLevel+1);
 
 			}else{
 
-				//printf("THREAD %d HAS RUN FOR %d: lower than allowed, or at max THAN ALLOWED: 200 NOT SHIFTING FROM LEVEL %d.\n",setMeToReady->threadBlock->id,setMeToReady->threadBlock->elapsed,setMeToReady->queueLevel);
-				//enqueue same case for level 3++ and no drop
+				// printf("THREAD %d HAS RUN FOR %d: lower than allowed, or at max THAN ALLOWED: 200 NOT SHIFTING FROM LEVEL %d.\n",setMeToReady->threadBlock->id,setMeToReady->threadBlock->elapsed,setMeToReady->queueLevel);
+				// enqueue same case for level 3++ and no drop
 				enQueueState(setMeToReady, READY, sched, setMeToReady->queueLevel);
 
 			}
@@ -438,106 +424,89 @@ int my_pthread_yield() {
 		
 			}
 
-
-
-
 		}	
+		
 		return completed;
+		
 	}
+	
 };
 
-/* terminate a thread */
+/* 
+	- Terminate a thread, and deallocate any dynamic memory created when starting this thread
+*/
 void my_pthread_exit(void *value_ptr) {
-	// Deallocated any dynamic memory created when starting this thread
-
+	
 	node *threadToDestroy = (node *)value_ptr;
 	threadToJoin = threadToDestroy->threadBlock->id;
-	
-	//fprintf(stdout,"{PTHREAD - EXIT} Thread %d\n",threadToDestroy->threadBlock->id);
-
+	// fprintf(stdout,"{PTHREAD - EXIT} Thread %d\n",threadToDestroy->threadBlock->id);
 	threadToDestroy->threadBlock->join = 1;
-
-	
 	completed++;
 
 	if(sched == 10){
 		
-		
-		
 		threadToDestroy->threadBlock->status = COMPLETE;
-
-		
 		getcontext(threadToDestroy->threadBlock->context);
-		returnValue = threadToDestroy->threadBlock->returnValue;
-		
-		
+		returnValue = threadToDestroy->threadBlock->returnValue;	
 
 		if(waitingToJoin == 0){
+			
 			waitingToJoin = 1;
-			//fprintf(stdout,"Going to Join Context with return value %s\n",(char *)returnValue);
+			// fprintf(stdout,"Going to Join Context with return value %s\n",(char *)returnValue);
 			setcontext(&joinThreadContext);
 
 		}else{		
 
-		
-			//fprintf(stdout,"Removing...\n");
+			// fprintf(stdout,"Removing...\n");
 			getcontext(&exitThreadContext);
 
 			if(waitingToJoin == 1){
-				//fprintf(stdout,"Going to interrupt...\n");
 				
-				
+				// fprintf(stdout,"Going to interrupt...\n");				
 				timerInterruptHandler();
 	
 			}else{
 	
-				//fprintf(stdout,"Freeing...\n");
-			
+				// fprintf(stdout,"Freeing...\n");
 				free(threadToDestroy->threadBlock->context);
 				threadToDestroy->threadBlock->context = NULL;
 				free(threadToDestroy->threadBlock);
 				threadToDestroy->threadBlock = NULL;
 				free(threadToDestroy);
 				threadToDestroy = NULL;
-				
+			
 				int status = setcontext(&scheduleThreads);
+				
 			}
 			
 		}
+		
 	}else{
+		
 		node* remove = runningMLFQ->front;
 		if(!remove){
-			//fprintf(stderr,"REMOVE IS NULL\n");
-		}else{
-
-			//remove->next=NULL;
-			
-			//remove->threadBlock->status = COMPLETE;
-
-			
+			// fprintf(stderr,"REMOVE IS NULL\n");
+		}else{			
 
 			getcontext(threadToDestroy->threadBlock->context);
-
 			if(waitingToJoin == 0){
+				
 				waitingToJoin = 1;
-				//fprintf(stdout,"Going to Join Context with return value %s\n",(char *)returnValue);
+				// fprintf(stdout,"Going to Join Context with return value %s\n",(char *)returnValue);
 				setcontext(&joinThreadContext);
 
 			}else{		
 
-		
-				//fprintf(stdout,"Removing...\n");
+				// fprintf(stdout,"Removing...\n");
 				getcontext(&exitThreadContext);
-
 				if(waitingToJoin == 1){
-				//fprintf(stdout,"Going to interrupt...\n");
-				
-				
+					
+					//fprintf(stdout,"Going to interrupt...\n");
 					timerInterruptHandler();
 	
 				}else{
 	
-				//fprintf(stdout,"Freeing...\n");
+				// fprintf(stdout,"Freeing...\n");
 			
 					free(threadToDestroy->threadBlock->context);
 					threadToDestroy->threadBlock->context = NULL;
@@ -547,6 +516,7 @@ void my_pthread_exit(void *value_ptr) {
 					threadToDestroy = NULL;
 				
 					int status = setcontext(&scheduleThreads);
+					
 				}
 			
 			}
@@ -557,24 +527,26 @@ void my_pthread_exit(void *value_ptr) {
 	
 };
 
-/* wait for thread termination */
-//Change to completed queue later instead of ready queue
+/*	
+
+	- Wait for a specific thread to terminate
+		- Once this thread finishes, deallocate any dynamic memory created when starting this thread
+		
+*/
+
 int my_pthread_join(my_pthread_t thread, void **value_ptr) {
-	// Waiting for a specific thread to terminate
-	// Once this thread finishes,
-	// Deallocated any dynamic memory created when starting this thread
-  
+
+	//fprintf(stdout,"Waiting for thread %d\n", thread);
 	int counter = 0;
-	
-	//fprintf(stdout,"Waiting for thread %d\n",thread);
 	node *dummy = findByThreadID(thread,sched);
-	
-	
 	join = 1;
 	getcontext(&joinThreadContext);
+	
 	if(waitingToJoin == 0){
+		
 		if(firstThread != -1){
-			//fprintf(stdout,"Going to Original Context\n");
+			
+			// fprintf(stdout,"Going to Original Context\n");
 			returnValue = NULL;
 			waitingToJoin = 1;
 		
@@ -588,30 +560,39 @@ int my_pthread_join(my_pthread_t thread, void **value_ptr) {
 				removeThread = runningMLFQ->front;
 
 			} 
-		//	fprintf(stdout,"{JOIN} %s\n",(char *)removeThread->threadBlock->returnValue);
+			
+			// fprintf(stdout,"{JOIN} %s\n",(char *)removeThread->threadBlock->returnValue);
 			setcontext(removeThread->threadBlock->context);
+			
 		}else{
 			
 			while(dummy){
-				//fprintf(stdout,"{Yielding....}\n");
+				
+				// fprintf(stdout,"{Yielding....}\n");
 				my_pthread_yield();	
 			
-			}	
+			}
+			
 		}
+		
 	}else{
+		
 		if(value_ptr != NULL && dummy != NULL){
+			
 			//fprintf(stdout,"Set Return Value\n");
 			*value_ptr = returnValue;
 	
 		}
-		
-		//join = 0;	
+			
 		waitingToJoin = 0;
 		return 0;
+		
 	}
+	
 	//fprintf(stdout,"Returning from join\n");
 	
 	return 0;
+	
 };
 
 void appendMutex(mutexNode * head,mutexNode * mutex){
@@ -644,10 +625,9 @@ void addToBlockedList(my_pthread_mutex_t* mutex, node* thread){
 			ptr=ptr->next;
 		}
 		ptr = thread;
-		//if stcf enqueuestate
-		//if mlqf next = null
 		
 	}
+	
 }
 
 node* removeBlockedList(my_pthread_mutex_t *mutex){
@@ -676,44 +656,45 @@ int my_pthread_mutex_init(my_pthread_mutex_t *mutex, const pthread_mutexattr_t *
 	
 	//printf("LEAVING MUTEX INITIALIZER\n");
 	return 0;
+	
 };
 
-/* acquire the mutex lock */
-
-
+/*	
+	- acquire the mutex lock 
+		- Use the built-in test-and-set atomic function to test the mutex
+		- If mutex is acquired successfuly, enter critical section
+		- If acquiring mutex fails, push current thread into block list and context switch to scheduler 
+	- check if mutex is already locked
+		- if already locked, then calling thread is blocked
+		- else, lock thread and set owner to running thread
+		
+*/
 int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) {
-	// Use the built-in test-and-set atomic function to test the mutex
-	// If mutex is acquired successfuly, enter critical section
-	// If acquiring mutex fails, push current thread into block list 
-	// and context switch to scheduler 
-
-
-	//check if mutex is already locked
-		//if already locked
-			//calling thread is blocked
-		//else lock thread
-			//set owner to running thread
 
 #ifndef MLFQ
 	if(mutex->flag==0){
-		mutex->holder = runningQueue->front;//changed from threadbock to front
-		//printf("MUTEX ACQUIRED BY THREAD %d\n",mutex->holder->id);
+		
+		mutex->holder = runningQueue->front;
+		// printf("MUTEX ACQUIRED BY THREAD %d\n",mutex->holder->id);
 		while(__sync_lock_test_and_set(&mutex->flag,1));
-		//__sync_lock_release(&mutex);	
+		
 	}else{
+		
 		node *ptr = deQueueState(RUNNING);
-		//printf("MUTEX BLOCKING THREAD %d\n",ptr->threadBlock->id);
+		// printf("MUTEX BLOCKING THREAD %d\n",ptr->threadBlock->id);
 		enQueueState(ptr, BLOCKED, sched, 0);
-		addToBlockedList(mutex,ptr);//be sure to preserve pointer ties
+		addToBlockedList(mutex,ptr); // be sure to preserve pointer ties
 		swapcontext(ptr->threadBlock->context,&scheduleThreads);
+		
 	}
+	
 #else
 	if(mutex->flag==0){
 		mutex->holder = runningMLFQ->front;
 		while(__sync_lock_test_and_set(&mutex->flag,1));
 	}else{
 		node *ptr = runningMLFQ->front;
-		addToBlockedList(mutex,ptr);//be sure to cut off pointer ties
+		addToBlockedList(mutex,ptr); // be sure to cut off pointer ties
 		swapcontext(ptr->threadBlock->context,&scheduleThreads);
 	}
 
@@ -721,27 +702,25 @@ int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) {
 	//printf("LEAVING LOCK\n");
 	//printf("leaving mutex lock\n");
 	return 0;
+	
 };
 
-/* release the mutex lock */
+/* - Release the mutex lock 
+	- Release mutex and make it available again
+	- Put threads in block list to run queu so they can compete for mutex later
+*/
 int my_pthread_mutex_unlock(my_pthread_mutex_t *mutex) {
-	
-	// Release mutex and make it available again. 
-	// Put threads in block list to run queue 
-	// so that they could compete for mutex later.
 
 	//printf("INSIDE UNLOCK\n");
 
 #ifndef MLFQ
 	node *ptr=runningQueue->front;
 	if(ptr->threadBlock->id==mutex->holder->threadBlock->id){
-			//printf("the holder thread is attempting to unlock the mutex\n");
-			//printf("MUTEX RELEASED BY THREAD %d\n",mutex->holder->id);
-		//__sync_lock_release(&mutex);
-
+		
+		// printf("the holder thread is attempting to unlock the mutex\n");
+		// printf("MUTEX RELEASED BY THREAD %d\n",mutex->holder->id);
+		
 		__sync_lock_test_and_set(&mutex->flag,0);
-
-	
 		ptr = mutex->front;
 		
 		while(ptr != NULL){
@@ -750,13 +729,12 @@ int my_pthread_mutex_unlock(my_pthread_mutex_t *mutex) {
 			enQueueState(ptr, READY, sched, 0);
 			ptr = ptr->next;
 		}
-
 		
 	}
-	//printf("LEAVING UNLOCK\n");
+	
+	// printf("LEAVING UNLOCK\n");
 	
 #else
-
 
 	node *ptr=runningMLFQ->front;
 	if(ptr->threadBlock->id==mutex->holder->threadBlock->id){
@@ -766,27 +744,28 @@ int my_pthread_mutex_unlock(my_pthread_mutex_t *mutex) {
 	node *ptr2 = removeBlockedList(mutex);
 	while(ptr2!=NULL){
 		
-		//create a function to pull node from list
-
 		enQueueState(ptr2,RUNNING,sched,ptr2->queueLevel);
-		
 		ptr2 = removeBlockedList(mutex);
+		
 	}
-	//removeBlockedList(mutex);
+
 #endif
 	return 0;
+	
 };
 
+/* 
 
-/* destroy the mutex */
+	- Destroy the mutex 
+		- Deallocate dynamic memory created in my_pthread_mutex_init
+			- find *mutex in mutex list by ID
+				- disconnect it
+				- free allocated
+				
+*/
 int my_pthread_mutex_destroy(my_pthread_mutex_t *mutex) {
-	// Deallocate dynamic memory created in my_pthread_mutex_init
-	//printf("INSIDE DESTROY\n");
 	
-	//find *mutex in mutex list by ID
-		//disconnect it
-		//free allocated
-
+	//printf("INSIDE DESTROY\n");
 	mutexNode*ptr = mutexList;
 	mutexNode *prev;
 	while(ptr!=NULL){
@@ -797,192 +776,105 @@ int my_pthread_mutex_destroy(my_pthread_mutex_t *mutex) {
 		prev=ptr;
 		ptr=ptr->next;
 	}
-	//edge cases
+	// edge cases
 	free(ptr);
 	ptr = NULL;
-
 	return 0;
+	
 };
 
-
-/* scheduler */
+/* scheduler 
+	- Invoke different actual scheduling algorithms according to policy (STCF or MLFQ)
+*/
 static void schedule() {
-
-
-	// Invoke different actual scheduling algorithms
-	// according to policy (STCF or MLFQ)
-
-// schedule policy
 
 	if(sched == 10){
 	
 		sched_stcf();
 
 	}else{
-//#else 
-	sched_mlfq();
+
+		sched_mlfq();
 
 	}
-//#endif
 
 }
 
 /* Preemptive SJF (STCF) scheduling algorithm */
 static void sched_stcf() {
 
-
-
 	//fprintf(stdout,"{STCF} In scheduler.\n");
-
-	
-
-	
 	node *threadToSchedule = deQueueByPriority();
 	
 	if(!threadToSchedule){
 
-		//fprintf(stdout,"No items in ready queue\n");
+		// fprintf(stdout,"No items in ready queue\n");
 
 	}	
 	
 	while(completed < allThreadsCreated){
 	
-		
 		threadToSchedule = deQueueByPriority();	
 		if(!threadToSchedule) break;
 		if(threadToSchedule->threadBlock->status == COMPLETE){
 
-			//fprintf(stdout,"{SCHEDULER} Completed Thread %d\n",threadToSchedule->threadBlock->id);
-	
-			continue;
-			
-
+			// fprintf(stdout,"{SCHEDULER} Completed Thread %d\n",threadToSchedule->threadBlock->id);
+			continue;		
 			
 		}else{
-
-					
+		
 			threadToSchedule->threadBlock->status = RUNNING;
-		
-			//fprintf(stdout,"{SCHEDULER - COMPLETED - %d} Thread %d status %d\n",completed,threadToSchedule->threadBlock->id,threadToSchedule->threadBlock->status);
-
-		
-
+			// fprintf(stdout,"{SCHEDULER - COMPLETED - %d} Thread %d status %d\n",completed,threadToSchedule->threadBlock->id,threadToSchedule->threadBlock->status);
+			
 			int status = swapcontext(&scheduleThreads,threadToSchedule->threadBlock->context);
-			
-			
-
 			if(threadToSchedule != NULL && threadToSchedule->threadBlock != NULL && threadToSchedule->threadBlock->id != 0){
 
-				//fprintf(stdout,"{Scheduler} Thread %d status %d\n",threadToSchedule->threadBlock->id,threadToSchedule->threadBlock->status);
-				
+				// fprintf(stdout,"{Scheduler} Thread %d status %d\n",threadToSchedule->threadBlock->id,threadToSchedule->threadBlock->status);
 
-			}
-					
+			}					
 			
-			getcontext(&scheduleThreads);
-			
-				
+			getcontext(&scheduleThreads);			
 
-		}
-			
+		}	
 
-	}
-	
+	}	
 	
 }
-
 
 /* Preemptive MLFQ scheduling algorithm */
 static void sched_mlfq() {
 
 	while(completed < allThreadsCreated){
+		
 		//printMLFQ(A);
 		node* threadToSchedule = dequeueMLFQ(A);
-		//threadToSchedule->next=NULL;
 		runningMLFQ->front = threadToSchedule;
 		runningMLFQ->rear = threadToSchedule;
 			
 		//fprintf(stdout,"{SCHEDULER - MLFQ} Scheduling thread %d\n",threadToSchedule->threadBlock->id);
 		if(threadToSchedule->threadBlock == NULL) break;
+		
 		if(threadToSchedule->threadBlock->status == COMPLETE){
 			
 				continue;
 		}
 
 		threadToSchedule->threadBlock->status = RUNNING;
-			
 		clock_gettime(CLOCK_REALTIME, &start);
-
 		int status = swapcontext(&scheduleThreads,threadToSchedule->threadBlock->context);
 
 		if(threadToSchedule != NULL && threadToSchedule->threadBlock != NULL && threadToSchedule->threadBlock->id != 0){
 
-			//f//printf(stdout,"{Scheduler - MLFQ} Thread %d status %d\n",threadToSchedule->threadBlock->id,threadToSchedule->threadBlock->status);	
+			// fprintf(stdout,"{Scheduler - MLFQ} Thread %d status %d\n",threadToSchedule->threadBlock->id,threadToSchedule->threadBlock->status);	
+		
 		}
 
-
 		getcontext(&scheduleThreads);	
-		
-		
-
 	
 	}
-	
-
 	
 }
 
-
-void *testThreads(void *args){
-	//printf("In user function.\n");
-	int i;
-
-	for(i = 0; i < 1000;i++){
-		//printf("X: %d\n",x);
-		x++;	
-		//my_pthread_yield();	
-
-	}
-
-	//printf("X is %d\n",x);
-
-	
-	return "Success";
-	
-}
-/*int main(void){
-
-	int numThreads = 3;
-	my_pthread_t pid[numThreads];
-	
-	int i;
-	my_pthread_mutex_init(&m,NULL);
-	my_pthread_mutex_init(&u,NULL);
-	my_pthread_mutex_init(&t,NULL);
-	for(i = 0; i < numThreads; i++){
-
-		my_pthread_create(&pid[i],NULL,&testThreads,NULL);
-		
-	}
-		
-
-	for(i = 0; i < numThreads; i++){
-
-		void *result;
-		my_pthread_join(pid[i],&result);
-		printf("Thread %d returned: %s\n",pid[i],((char *)result));
-
-	}
-	
-	unsigned long int expectedValue = numThreads *1000;
-	printf("Expected X value is %d\n",expectedValue);
-	printf("Final X value is %d\n",x);
-	
-	
-	
-	return 0;
-}
-*/
 /*
 ##################################################################################################################################
 #																																#
@@ -1001,7 +893,6 @@ void initQueues(){
 	blockedQueue->front = NULL;
 	blockedQueue->sizeOfQueue = 0;
 
-
 	runningQueue = (struct runningThreadQueue *)malloc(sizeof(struct runningThreadQueue));
 	runningQueue->rear = NULL;	
 	runningQueue->front = NULL;
@@ -1016,7 +907,7 @@ void initQueues(){
 		A[i] = malloc(sizeof(struct runningThreadQueue));
 		A[i]->front = NULL;
 		A[i]->rear = NULL;
-		//////printf("bop\n");
+		// printf("bop\n");
 	}
 	
 	runningMLFQ = (struct runningThreadQueue*)malloc(sizeof(struct runningThreadQueue));
@@ -1024,8 +915,6 @@ void initQueues(){
 	runningMLFQ->front = NULL;
 	runningMLFQ->readySize = 0;
 	runningMLFQ->runningSize = 0;
-
-	//below added by ryan
 	mutexList = NULL;
 	
 	 
@@ -1040,28 +929,24 @@ node *removeFromMLFQ(my_pthread_t threadID,struct runningThreadQueue **A){
 		if(A[i]->front->threadBlock->id == threadID){
 
 			node *remove = A[i]->front;
-
 			A[i]->front = A[i]->front->next;
-		
-		
-		
 			return remove;
 
 		}else{
+			
 			node *curr = A[i]->front->next;
 			node *prev = A[i]->front;
 			
 			while(curr!=NULL && curr->threadBlock->id != threadID){
-				//printf("asdfj\n");
+
 				prev = curr;
 				curr = curr->next;	
 				
-
 			}
+			
 			if(!curr){
 
 				//fprintf(stdout,"Could not find thread with ID %d\n",threadID);
-			
 
 			}else if(!curr->next){
 
@@ -1077,45 +962,43 @@ node *removeFromMLFQ(my_pthread_t threadID,struct runningThreadQueue **A){
 				//printf("curr id: %d\n", curr->threadBlock->id);
 				if(prev->threadBlock == NULL) return remove;
 				//printf("prev id: %d\n", prev->threadBlock->id);
-				
-				prev->next = curr->next;
-				
-				
-			
+
+				prev->next = curr->next;			
 				return remove;
-			
 
 			}
 		}
 	}
+	
 	return NULL;
-
 
 }
 
-
-node* dequeueMLFQ(struct runningThreadQueue **A){
-	//call from within sched_mlfq
-	//find level that has a node
-	//dequeue from that list by priority
-	//return node
+/*
+	- call from within sched_mlfq
+	- find level that has a node
+	- dequeue from that list by priority
+	- return node
 	
-	//for each level
-		//traverse list
-		//find lowest priority
-		//pull node from list
-		//return node
-		//dont change queuelevel here
-		
+	- for each level
+		- traverse list
+		- find lowest priority
+		- pull node from list
+		- return node
+		- dont change queue level here
+*/
+node* dequeueMLFQ(struct runningThreadQueue **A){
 		
 	//printf("IN DEQUEUE FUNCTION\n");
 	int i;
 	node* ptr;
-
 	for(i=0;i<4;i++){
+		
 		ptr=A[i]->front;
 		if(ptr==NULL){
+			
 			continue;
+			
 		}
 
 		A[i]->front=A[i]->front->next;
@@ -1128,11 +1011,10 @@ node* dequeueMLFQ(struct runningThreadQueue **A){
 		//printMLFQ(A);
 		return ptr;
 	}
-	
 
 	return NULL;
+	
 }
-
 
 void shiftThreadsInQueue(struct runningThreadQueue **A){
 	int i;
@@ -1165,15 +1047,15 @@ void printMLFQ(struct runningThreadQueue **A){
 	int i;
 	
 	for(i=0;i<4;i++){
+		
 		node *ptr = A[i]->front;
-
-		printf("LEVEL %d\n",i);
+		printf("LEVEL %d\n", i);
 
 		while(ptr!=NULL){
 
 			printf("%d->",ptr->threadBlock->id);
-
 			ptr=ptr->next;
+			
 		}
 
 		printf("\n");
@@ -1183,7 +1065,7 @@ void printMLFQ(struct runningThreadQueue **A){
 
 
 
-//Use parameters to enqueue with state policy
+// Use parameters to enqueue with state policy
 void addToFront(tcb *data){
 
 	struct tcbNode *newNode = (struct tcbNode *)malloc(sizeof(struct tcbNode));
@@ -1202,28 +1084,35 @@ void addToFront(tcb *data){
 
 	}
 }
-
+/*
+	STCF = 10, MLFQ = 11
+*/
 void enQueueState(node *block,int state, int schedulerType, int level){
+	
 	//fprintf(stdout,"{ENQUEUEING - %d} Thread %d \n",state,block->threadBlock->id);
-	//stcf is 10
-	//mlfq is 11
 
 	if(schedulerType == 10){
 
 		block->next = NULL;
-
 		if(state == BLOCKED){
+			
 			if(!blockedQueue->rear){
+				
 				blockedQueue->rear = (node *)malloc(sizeof(node));
 				blockedQueue->rear = block;
 				blockedQueue->rear->next = NULL;
 				blockedQueue->front = blockedQueue->rear;
+				
 			}else{
+				
 				blockedQueue->rear->next = block;
 				block->next = NULL;
 				blockedQueue->rear = block;
+				
 			}
+			
 			blockedQueue->sizeOfQueue++;
+			
 		}else{
 
 			if (runningQueue->front == NULL){
@@ -1237,23 +1126,17 @@ void enQueueState(node *block,int state, int schedulerType, int level){
 				block->next = NULL;
 				runningQueue->rear = block;
 
-
 			}
 		
 			if(state == READY){
 
-				runningQueue->readySize = runningQueue->readySize + 1;
-					
-							
+				runningQueue->readySize = runningQueue->readySize + 1;			
 
 			}else{
 
-			
 				runningQueue->runningSize = runningQueue->runningSize + 1;
 
-
 			}
-
 
 		}
 	}else{
@@ -1261,7 +1144,9 @@ void enQueueState(node *block,int state, int schedulerType, int level){
 		block->queueLevel = level;
 	
 		if(level > 3){
+			
 			//error
+			
 		}
 		
 		if(A[level]->front == NULL){
@@ -1272,6 +1157,7 @@ void enQueueState(node *block,int state, int schedulerType, int level){
 			block->next=NULL;
 			
 		}else{
+			
 			node* ptr = A[level]->front;
 			node* prev;
 			while(ptr != NULL){
@@ -1280,11 +1166,10 @@ void enQueueState(node *block,int state, int schedulerType, int level){
 			}
 			prev->next = block;
 			A[level]->rear = block;
-			A[level]->rear->next = NULL;
-			
-			
+			A[level]->rear->next = NULL;			
 			
 		}
+		
 		//printMLFQ(A);
 
 	}
@@ -1304,7 +1189,7 @@ node *checkIfInCompletedQueue(my_pthread_t threadID){
 
 		if(dummy->threadBlock->id == threadID){
 			
-			//fprintf(stdout,"Found thread %d\n",dummy->threadBlock->id);
+			// fprintf(stdout,"Found thread %d\n",dummy->threadBlock->id);
 			return dummy;
 
 		}else{
@@ -1312,28 +1197,20 @@ node *checkIfInCompletedQueue(my_pthread_t threadID){
 			dummy = dummy->next;
 
 		}
+		
 	}
 	
 	return NULL;
 
 }
 void outputCompletedThreads(){
-
-
 	node *dummy = completedThreads;
-
-	//fprintf(stdout,"Threads Completed: ");
-
+	fprintf(stdout,"Threads Completed: ");
 	while(dummy){
-
-		//fprintf(stdout,"%d ->",dummy->threadBlock->id);
-
+		fprintf(stdout,"%d ->",dummy->threadBlock->id);
 		dummy = dummy->next;
-
 	}
-
-	//fprintf(stdout,"\n");
-
+	fprintf(stdout,"\n");
 }
 node *findByThreadID(my_pthread_t threadID,int sched){
 
@@ -1344,6 +1221,7 @@ node *findByThreadID(my_pthread_t threadID,int sched){
 		while(dummy){
 
 			if(dummy->threadBlock->id == threadID){
+				
 				//fprintf(stdout,"Found thread %d by ID\n",dummy->threadBlock->id);
 				return dummy;
 
@@ -1358,8 +1236,8 @@ node *findByThreadID(my_pthread_t threadID,int sched){
 	}else{
 		int i;
 		for(i=0;i<4;i++){
+			
 			node *ptr = A[i]->front;
-		
 			while(ptr!=NULL){
 				if(ptr->threadBlock->id == threadID){
 
@@ -1376,8 +1254,6 @@ node *findByThreadID(my_pthread_t threadID,int sched){
 		}
 
 	}
-	
-	
 
 	return NULL;
 
@@ -1388,11 +1264,7 @@ node *removeCompletedThread(my_pthread_t threadID, int state){
 	if(runningQueue->front->threadBlock->id == threadID){
 
 		node *remove = runningQueue->front;
-
-		runningQueue->front = runningQueue->front->next;
-		
-		
-		
+		runningQueue->front = runningQueue->front->next;		
 		return remove;
 
 	}else{
@@ -1401,18 +1273,16 @@ node *removeCompletedThread(my_pthread_t threadID, int state){
 		node *prev = runningQueue->front;
 
 		while(curr!=NULL && curr->threadBlock->id != threadID){
-			//printf("asdfj\n");
+
 			prev = curr;
 			curr = curr->next;	
 			
-
 		}
 
 		if(!curr){
 
 			//fprintf(stdout,"Could not find thread with ID %d\n",threadID);
 		
-
 		}else if(!curr->next){
 
 			node *remove = runningQueue->rear;
@@ -1429,12 +1299,8 @@ node *removeCompletedThread(my_pthread_t threadID, int state){
 			//printf("prev id: %d\n", prev->threadBlock->id);
 			
 			prev->next = curr->next;
-			
-			
-		
 			return remove;
 		
-
 		}
 
 
@@ -1442,18 +1308,15 @@ node *removeCompletedThread(my_pthread_t threadID, int state){
 	
 	return NULL;
 
-
-
 }
 void setToComplete(my_pthread_t threadID){
-
 
 	node *dummy = runningQueue->front;
 	while(dummy){
 
 		if(dummy->threadBlock->id == threadID){
 			
-			//fprintf(stdout,"Thread %d complete", dummy->threadBlock->id);
+			// fprintf(stdout,"Thread %d complete", dummy->threadBlock->id);
 			dummy->threadBlock->status = COMPLETE;
 			break;
 
@@ -1475,7 +1338,7 @@ node *deQueueState(int state){
 
 		if(!dummy){
 
-			//fprintf(stderr,"Cannot dequeue empty blocked stack.\n");
+			// fprintf(stderr,"Cannot dequeue empty blocked stack.\n");
 			return NULL;
 
 		}else{
@@ -1499,7 +1362,6 @@ node *deQueueState(int state){
 		return returnNode;
 
 	}else{
-
 		
 		if(state == READY){
 
@@ -1507,17 +1369,17 @@ node *deQueueState(int state){
 			
 			while(ready){
 
-
 				if(ready->threadBlock->status == READY){
+					
 					runningQueue->readySize = runningQueue->readySize - 1;
-					return ready;
-											
+					return ready;							
 
 				}else{
 
 					ready = ready->next;
 
 				}
+				
 			}
 	
 			if(ready == NULL){
@@ -1527,18 +1389,15 @@ node *deQueueState(int state){
 				
 			}
 
-
-
 		}else{
 
 			node *running = runningQueue->front;
-		
 			while(running){
 
 
 				if(running->threadBlock->status == RUNNING){
+					
 					runningQueue->runningSize = runningQueue->runningSize - 1;
-
 					return running;
 											
 
@@ -1547,6 +1406,7 @@ node *deQueueState(int state){
 					running = running->next;
 
 				}
+				
 			}
 			
 			if(running == NULL){
@@ -1557,27 +1417,24 @@ node *deQueueState(int state){
 			}
 
 		}
+		
 	}
 
 	return NULL;	
+	
 }
 
 void outputPriority(){
-
-	//fprintf(stdout,"------------------------------ OUTPUT PRIORITY ------------------------------\n");
+	fprintf(stdout,"------------------------------ OUTPUT PRIORITY ------------------------------\n");
 	node *dummy;
 	dummy = runningQueue->front;
 	while(dummy){
-
-		//fprintf(stdout,"{OUTPUT - PRIORITY - %d} Thread %d PRIORITY %d\n",dummy->threadBlock->status,dummy->threadBlock->id,dummy->threadBlock->priority);
+		fprintf(stdout,"{OUTPUT - PRIORITY - %d} Thread %d PRIORITY %d\n",dummy->threadBlock->status,dummy->threadBlock->id,dummy->threadBlock->priority);
 		dummy = dummy->next;
-
-
 	}
-
-	//fprintf(stdout,"------------------------------ END OF OUTPUT --------------------------------\n");
-
+	fprintf(stdout,"------------------------------ END OF OUTPUT --------------------------------\n");
 }
+
 node *deQueueByPriority(){
 
 	node *dummy = runningQueue->front;
@@ -1586,18 +1443,15 @@ node *deQueueByPriority(){
 		return NULL;
 	
 	}
-	int min = runningQueue->front->threadBlock->priority;
-
-	node *minThread = dummy;
 	
+	int min = runningQueue->front->threadBlock->priority;
+	node *minThread = dummy;
 	while(dummy){
-
-
 		
 		if((min > dummy->threadBlock->priority) && dummy->threadBlock->status != COMPLETE){
+			
 			minThread = dummy;
 			min = dummy->threadBlock->priority;
-		
 	
 		}
 
@@ -1612,8 +1466,6 @@ node *deQueueByPriority(){
 
 }
 node *removeFromQueueState(my_pthread_t threadID, int state){
-
-	
 	
 	if(state == BLOCKED && blockedQueue->front->threadBlock->id == threadID){
 
@@ -1623,12 +1475,11 @@ node *removeFromQueueState(my_pthread_t threadID, int state){
 		return remove;
 
 	}else if(state == RUNNING && runningQueue->front->threadBlock->id == threadID){
-	
-		
+			
 		return runningQueue->front;
 
-
 	}else{
+		
 		node *curr;
 		node *prev;
 		node *currRear;
@@ -1649,12 +1500,7 @@ node *removeFromQueueState(my_pthread_t threadID, int state){
 			curr = runningQueue->front->next;
 			currRear = runningQueue->rear;
 			
-
 		}
-		
-		
-		
-
 
 		while(curr != NULL && curr->threadBlock->id != threadID){
 	
@@ -1665,7 +1511,7 @@ node *removeFromQueueState(my_pthread_t threadID, int state){
 		
 		if(curr == NULL){
 
-			//fprintf(stdout,"No node with the corresponding thread ID.\n");
+			// fprintf(stdout,"No node with the corresponding thread ID.\n");
 			return NULL;
 
 		}else if(curr->next == NULL){
@@ -1677,7 +1523,6 @@ node *removeFromQueueState(my_pthread_t threadID, int state){
 			return curr;
 
 		}
-		
 	
 	}
 	
@@ -1723,30 +1568,28 @@ int isEmptyState(int state){
 
 
 }
-node *removeCreatedNode(){
 
+node *removeCreatedNode(){
 
 	node *remove = runningQueue->front->next;
 	runningQueue->front->next = NULL;
 	return remove;
 
 }
+
 void outputQueue(){
-	
 	printf("Threads in Running Queue: %d | ",runningQueue->runningSize);
 	node *dummy;
 	dummy = runningQueue->front;
 	while(dummy){
-
 		if(dummy->threadBlock->status == RUNNING){
-
 			printf("%d -> ", dummy->threadBlock->id);
 		}
 			dummy = dummy->next;
-		
 	}
 	printf("\n");
 }
+
 
 
 
