@@ -16,7 +16,7 @@ The benchmark folder allows for comparison between the User-Level and POSIX Thre
 - The programs parrallelCal and vectorMultiply are CPU-bound while externalCal is IO-bound.
  
  # Benchmarks
-| # of Threads Created | my_pthread <br> ./parrallelCal <br> PSJF |my_pthread <br> ./parrallelCal <br> MLFQ | pthread  <br> ./parrallelCal |my_pthread <br> ./vectorMultiply <br> PSJF | my_pthread <br> ./vectorMultiply <br> MLFQ |pthread <br> ./vectorMultiply |my_pthread <br> ./externalCal <br> PSJF |my_pthread <br> ./externalCal <br> MLFQ |pthread <br> ./externalCal|
+| # of Threads Created | my_pthread <br> ./parallelCal <br> PSJF |my_pthread <br> ./parallelCal <br> MLFQ | pthread  <br> ./parallelCal |my_pthread <br> ./vectorMultiply <br> PSJF | my_pthread <br> ./vectorMultiply <br> MLFQ |pthread <br> ./vectorMultiply |my_pthread <br> ./externalCal <br> PSJF |my_pthread <br> ./externalCal <br> MLFQ |pthread <br> ./externalCal|
 |--|--| -- |--|--|--| -- |--|--| -- |
 | 1 |2075 ms|2060 ms|2047 ms|48 ms|45 ms|43 ms|6328 ms|6165 ms| 6592 ms |
 | 10 |2054 ms|2045 ms|482 ms|49 ms|48 ms|276 ms|6933 ms|6196 ms| 2488 ms|
