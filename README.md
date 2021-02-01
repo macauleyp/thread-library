@@ -14,14 +14,6 @@ The benchmark folder allows for comparison between the User-Level and POSIX Thre
  - **Note:** To use the User-Level Thread library instead of the POSIX Thread library, comment out the MACRO ```#define USE_MY_PTHREAD 1 ``` in the file my_pthread_t.h and recompile the thread library and benchmark from their respective Makefile 
 	 - More specifically, execute ```make clean``` and then ```make``` in both the Thread library and benchmark directory.
 - The programs parrallelCal and vectorMultiply are CPU-bound while externalCal is IO-bound.
- 
- # Benchmarks
-| # of Threads Created | my_pthread <br> ./parallelCal <br> PSJF |my_pthread <br> ./parallelCal <br> MLFQ | pthread  <br> ./parallelCal |my_pthread <br> ./vectorMultiply <br> PSJF | my_pthread <br> ./vectorMultiply <br> MLFQ |pthread <br> ./vectorMultiply |my_pthread <br> ./externalCal <br> PSJF |my_pthread <br> ./externalCal <br> MLFQ |pthread <br> ./externalCal|
-|--|--| -- |--|--|--| -- |--|--| -- |
-| 1 |2075 ms|2060 ms|2047 ms|48 ms|45 ms|43 ms|6328 ms|6165 ms| 6592 ms |
-| 10 |2054 ms|2045 ms|482 ms|49 ms|48 ms|276 ms|6933 ms|6196 ms| 2488 ms|
-| 100 |2075 ms|2014 ms|442 ms|63 ms|66 ms|340 ms|6918 ms|6183 ms|2529 ms|
-| 1000 |2120 ms|2053 ms|515 ms| 78 ms|68 ms|469 ms|6924 ms|6232 ms|2481 ms|
 
 # Thread Library API
 The library features both thread and mutex lock related functions as defined below.  
